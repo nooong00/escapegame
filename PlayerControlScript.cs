@@ -17,6 +17,7 @@ enum Dir
         IDLE,
         MOVE,
         DAMAGED,
+        DEAD,
     };
 
 
@@ -30,8 +31,10 @@ enum Dir
     float tileUnit = 0.7f;
     Vector3 startPos;
 
-    int coin;
-
+    bool damaged;
+    int life;
+ //   Color invisibleColor;
+    SpriteRenderer playerRenderer;
 
     // Use this for initialization
     void Start () {
@@ -41,7 +44,11 @@ enum Dir
         posX = 3;
         posY = 3;
         startPos.Set(-posX * tileUnit, -posY * tileUnit, 0.0f);
-	}
+        damaged = false;
+//        invisibleColor = new Color(1, 1, 1, 0);
+        playerRenderer = transform.FindChild("char").GetComponent<SpriteRenderer>();
+        life = 3;
+    }
 	
 	// Update is called once per frame
 	void Update () {
@@ -69,11 +76,6 @@ enum Dir
             }
         }
 
-    }
-
-    void GetCoin()
-    {
-        coin++;
     }
 
     bool Movable(int x, int y)
@@ -117,6 +119,50 @@ enum Dir
         return new Vector3(startPos.x + (mX * tileUnit), startPos.y + (mY * tileUnit), -1);
     }
 
+    public void GetDamage()
+    {
+        if (state == PlayerState.DEAD) return;
+        if (damaged) return;
+        
+        life--;
+        GameManagerScript.instance.LostLife(life);
+        if (life < 1)
+        {
+            //죽음
+            state = PlayerState.DEAD;
+            StartCoroutine("CoDead");            
+            return;
+        }
+       
+
+        StartCoroutine("CoDamaged");
+    }
+
+
+    IEnumerator CoDead()
+    {
+        damaged = true;
+        Color tmp = Color.white;
+        GameManagerScript.instance.GameOver();
+        for(int i = 0; i < 20; ++i)
+        {
+            playerRenderer.color = tmp;
+            tmp.a -= 0.05f;
+            yield return new WaitForSeconds(0.1f);
+        } 
+        Destroy(gameObject);
+    }
+
+    IEnumerator CoDamaged()
+    {
+        damaged = true;
+        playerRenderer.color = Color.red;
+        yield return new WaitForSeconds(2.0f);
+        playerRenderer.color = Color.white;
+
+        damaged = false;
+    }
+
     IEnumerator CoMove(Dir dir)
     {
         Vector3 tmp = getPos(posX, posY);
@@ -151,7 +197,10 @@ enum Dir
         animator.ResetTrigger("right");
 
         transform.position = tmp;
-        state = PlayerState.IDLE;
+        if (state != PlayerState.DEAD)
+        {
+            state = PlayerState.IDLE;
+        }
     }
 
 }

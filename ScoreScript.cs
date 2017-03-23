@@ -8,10 +8,21 @@ using System.IO;
 
 
 public class ScoreScript : MonoBehaviour {
+    const int num = 5;
+
     public List<int> scores;
-    int num;
+
     string scoreFilePath;
     BinaryFormatter formatter;
+
+    public void AddScore(int n)
+    {
+        scores.Add(n);
+        scores.Sort();
+        scores.Reverse();
+        scores.RemoveAt(scores.Count - 1);
+        SaveScore();
+    }
 
     public void SaveScore()
     {
@@ -26,7 +37,6 @@ public class ScoreScript : MonoBehaviour {
         {
             for(int i = 0; i < num; ++i)
             {
-                //                scores.Add(new Score(i + 1, 5 - i));
                 scores.Add(10 - i);
             }
             SaveScore();
@@ -37,11 +47,10 @@ public class ScoreScript : MonoBehaviour {
         stream.Close();
     }
 
-    public void InitScore(int n)
+    public void InitScore()
     {
         formatter = new BinaryFormatter();
         scoreFilePath = Application.dataPath + "/Data/score.bin";
-        num = n;
         scores = new List<int>();
         LoadScore();
     }

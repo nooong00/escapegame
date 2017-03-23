@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class MenuScript : MonoBehaviour {
     public Image menuImg;
@@ -39,7 +40,7 @@ public class MenuScript : MonoBehaviour {
         menuPanel.SetActive(false);
 
         scoreObj = GetComponent<ScoreScript>();
-        scoreObj.InitScore(rankingNum);
+        scoreObj.InitScore();
         playerData = GetComponent<PlayerData>();
         playerData.init();
 
@@ -79,7 +80,7 @@ public class MenuScript : MonoBehaviour {
         switch (n)
         {
             case 0://시작
-                
+                SceneManager.LoadScene("Test01");
                 break;
             case 1://점수
                 panelTxt.GetComponent<Text>().text = menus[n];

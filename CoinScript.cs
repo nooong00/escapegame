@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class FireObjScript : MonoBehaviour {
+public class CoinScript : MonoBehaviour  {
     public float timer;
 
     public void SetTimer(float t)
@@ -10,20 +10,18 @@ public class FireObjScript : MonoBehaviour {
         timer = t;
     }
 
-    public void Play(float t)
+    public void Play()
     {
-        Destroy(gameObject, t);
+        Destroy(gameObject, timer);
     }
-
-
 
     void OnTriggerEnter2D(Collider2D col)
     {
         if(col.CompareTag("Player"))
         {
-            col.GetComponent<PlayerControlScript>().GetDamage();
-            Destroy(gameObject);            
+            GameManagerScript.instance.GetCoin();
+            Destroy(gameObject);
         }
     }
-	
+
 }
