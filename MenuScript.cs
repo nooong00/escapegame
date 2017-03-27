@@ -5,29 +5,59 @@ using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 
 public class MenuScript : MonoBehaviour {
-    public Image menuImg;
-    public GameObject menuTxt;
+    //상수
+    string[] menus = { "시작", "점수", "상점", "규칙", "종료" };
+    string playerDataFilePath;
+    string scoreFilePath;
+    const int rankingNum = 5;
+    float moveY = 55.0f;
+    int keyMenuBGM = 0;
+    int keyClickSE = 1;
 
-    public GameObject buttonObj;
-    public GameObject txtObj;
+    //프리팹
+    GameObject buttonObj;
+    GameObject txtObj;
+
+
+    //게임 내 오브젝트
+    Image menuImg;
+    GameObject menuTxt;
     GameObject rootBtn;
     GameObject rootTxt;
-    string[] menus = {"시작", "점수", "상점", "규칙", "종료" };
-    float moveY = 55.0f;
-    public GameObject[] rankingScore;
+    GameObject[] rankingScore;
+    GameObject menuPanel;
+    GameObject panelTxt;
+    GameObject panelBackBtn;
+    GameObject coinImg;
+    GameObject coinTxt;
 
-  //  const string scoreFilePath = "/Data/ranking.bin";
-    const int rankingNum = 5;
+    BinaryFileScript fileManager;
+    ScoreScript scoreObj;
+    PlayerData playerData;
 
-   public GameObject menuPanel;
-   public GameObject panelTxt;
-   public GameObject panelBackBtn;
+    AudioSource bgm;
+    AudioSource se;
 
-    public ScoreScript scoreObj;
-    public PlayerData playerData;
-
+   
 	// Use this for initialization
 	void Awake () {
+        LoadAssets();
+        gameObject.AddComponent<SoundManagerScript>();
+        StartCoroutine("CoMenuImg");
+
+    }
+
+    void Start()
+    {
+        SoundManagerScript.instance.PlayBGM(keyMenuBGM);
+    }
+
+    void LoadAssets()
+    {
+        buttonObj = Resources.Load<GameObject>("Prefabs/UI/Button");
+        txtObj = Resources.Load<GameObject>("Prefabs/UI/text");
+        
+
         menuImg = GameObject.Find("menuImg").GetComponent<Image>();
         menuTxt = GameObject.Find("menuImg").transform.FindChild("menuTxt").gameObject;
         rootBtn = GameObject.Find("button");
@@ -35,41 +65,78 @@ public class MenuScript : MonoBehaviour {
         rankingScore = new GameObject[rankingNum];
 
         menuPanel = GameObject.Find("Panel");
+
         panelTxt = menuPanel.transform.FindChild("title").gameObject;
         panelBackBtn = menuPanel.transform.FindChild("backbtn").gameObject;
         menuPanel.SetActive(false);
 
-        scoreObj = GetComponent<ScoreScript>();
-        scoreObj.InitScore();
-        playerData = GetComponent<PlayerData>();
-        playerData.init();
+        coinImg = Instantiate(Resources.Load<GameObject>("Prefabs/UI/CoinImg"), new Vector3(-80, 90, 0), transform.rotation);
+        coinImg.transform.SetParent(menuPanel.transform, false);
+        coinImg.transform.localScale = Vector3.one;
+        coinImg.GetComponent<RectTransform>().sizeDelta = new Vector2(50, 50);
+        coinImg.SetActive(false);
+
+        coinTxt = Instantiate(Resources.Load<GameObject>("Prefabs/UI/text"), new Vector3(30, 90, 0), transform.rotation);
+        coinTxt.transform.SetParent(menuPanel.transform, false);
+        coinTxt.transform.localScale = Vector3.one;
+        coinTxt.GetComponent<RectTransform>().sizeDelta = new Vector2(150, 45);
+        coinTxt.SetActive(false);
+
+        
+
+        fileManager = new BinaryFileScript();
+
+        scoreFilePath = Application.dataPath + "/Data/score.bin";
+        scoreObj = new ScoreScript();
+        if (!System.IO.File.Exists(scoreFilePath))
+        {
+            for(int i = 0; i < 5; ++i)
+            {
+                scoreObj.AddScore(i);
+            }
+            fileManager.SaveData<List<int>>(scoreObj.scores, scoreFilePath);                   
+        }
+        else scoreObj.scores = fileManager.LoadData<List<int>>(scoreFilePath);
+
+        playerDataFilePath = Application.dataPath + "/Data/playerdata.bin"; 
+        if (!System.IO.File.Exists(playerDataFilePath))
+        {
+            playerData = new PlayerData();
+            playerData.charList.Add(0);
+            playerData.mapList.Add(0);
+            playerData.coin = 0;
+            fileManager.SaveData<PlayerData>(playerData, playerDataFilePath);            
+        }
+        else playerData = fileManager.LoadData<PlayerData>(playerDataFilePath);
 
         for (int i = 0; i < rankingNum; ++i)
         {
             rankingScore[i] = Instantiate(txtObj, rootTxt.transform.position + (Vector3.down * moveY * i), transform.rotation);
             rankingScore[i].transform.SetParent(rootTxt.transform, false);
-            rankingScore[i].transform.localScale = new Vector3(1, 1, 1);            
+            rankingScore[i].transform.localScale = new Vector3(1, 1, 1);
             rankingScore[i].GetComponent<Text>().text = (i + 1) + ". " + scoreObj.scores[i];
         }
 
         rootTxt.SetActive(false);
 
-        StartCoroutine("CoMenuImg");
-        Vector3 pos = rootBtn.transform.position;
-        for(int i = 0; i < 5; ++i)
+        CreateMenu();
+    }
+
+    void CreateMenu()
+    {
+        for (int i = 0; i < menus.Length; ++i)
         {
-            //pos + (Vector3.down * moveY)
-            GameObject obj = Instantiate(buttonObj, pos + (Vector3.down * moveY * i), transform.rotation);
-            
+            GameObject obj = Instantiate(buttonObj, rootBtn.transform.position + (Vector3.down * moveY * i), transform.rotation);
+
             obj.transform.SetParent(rootBtn.transform, false);
-            obj.transform.localScale = new Vector3(1, 1, 1);
+            obj.transform.localScale = Vector3.one;
             obj.GetComponent<BtnScript>().init(i, menus[i]);
         }
-
-	}
+    }
 
     public void PlayMenu(int n)
     {
+        SoundManagerScript.instance.PlaySE(keyClickSE);
         if(n != 0 && n != 4)
         {
             menuPanel.SetActive(true);
@@ -88,6 +155,9 @@ public class MenuScript : MonoBehaviour {
                 break;
             case 2://상점
                 panelTxt.GetComponent<Text>().text = menus[n];
+                coinImg.SetActive(true);
+                coinTxt.SetActive(true);
+                coinTxt.GetComponent<Text>().text = playerData.coin.ToString();
                 break;
             case 3://규칙
                 panelTxt.GetComponent<Text>().text = menus[n];
@@ -100,10 +170,13 @@ public class MenuScript : MonoBehaviour {
 
     public void CloseMenu()
     {
+        SoundManagerScript.instance.PlaySE(keyClickSE);
         menuPanel.SetActive(false);
         panelTxt.SetActive(false);
         panelBackBtn.SetActive(false);
         rootTxt.SetActive(false);
+        coinImg.SetActive(false);
+        coinTxt.SetActive(false);
     }
 	
     IEnumerator CoMenuImg()

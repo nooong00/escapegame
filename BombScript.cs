@@ -10,7 +10,7 @@ public class BombScript : MonoBehaviour {
     public float idleTime;  //대기
     public float emergencyTime; //경고
 
-    float timer;
+//    float timer;
     int posX;
     int posY;
 
@@ -18,7 +18,7 @@ public class BombScript : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-        timer = 0.0f;
+//        timer = 0.0f;
         power = defaultPower;
         transform.GetComponent<SpriteRenderer>().color = new Color(1, 1, 1, 0);
         StartCoroutine("CoReady");

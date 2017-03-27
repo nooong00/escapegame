@@ -9,7 +9,7 @@ public class BombMakerScript : MonoBehaviour {
     int mapWidth;
     int mapHeight;
 
-    float tileUnit;
+//    float tileUnit;
     int posX;
     int posY;
 
@@ -17,7 +17,7 @@ public class BombMakerScript : MonoBehaviour {
 	void Start () {
         mapWidth = GameManagerScript.instance.mapWidth;
         mapHeight = GameManagerScript.instance.mapHeight;
-        tileUnit = GameManagerScript.instance.tileUnit;
+//        tileUnit = GameManagerScript.instance.tileUnit;
 
 //        GetSpawnPos();
         StartCoroutine("CoSpawn");

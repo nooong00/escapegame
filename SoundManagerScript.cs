@@ -4,40 +4,45 @@ using UnityEngine;
 //
 public class SoundManagerScript : MonoBehaviour {
     public static SoundManagerScript instance;
-    public AudioSource bgm;
-    public AudioSource se;
+
+    AudioSource bgm;
+    AudioSource se;
 
     public List<AudioClip> bgmList;
     public List<AudioClip> seList;
 
-    public List<AudioClip> list;
-
+    bool loaded;
 	// Use this for initialization
 	void Awake () {
         if (instance == null)
         {
             instance = this;
+            loaded = false;
         }
         bgm = gameObject.AddComponent<AudioSource>();
-        se = gameObject.AddComponent<AudioSource>();
-
-        bgm.loop = true;
         bgm.volume = 0.1f;
-        bgm.playOnAwake = false;
+        bgm.loop = true;
 
+        se = gameObject.AddComponent<AudioSource>();
         se.volume = 0.1f;
-        se.playOnAwake = false;
 
-        LoadAssets();
-	}
+        if (!loaded)
+        {
+            bgmList = new List<AudioClip>();
+            seList = new List<AudioClip>();
+
+            LoadAssets();
+        }
+    }
     
     public void LoadAssets()
     {
+        loaded = true;
 
         AudioClip[] bgms = Resources.LoadAll<AudioClip>("Music/BGM");
         for (int i = 0; i < bgms.Length; ++i)
         {
-            bgmList.Add(bgms[i]);            
+            bgmList.Add(bgms[i]);
         }
         AudioClip[] ses = Resources.LoadAll<AudioClip>("Music/SE");
         for(int i = 0; i< ses.Length; ++i)
@@ -49,6 +54,10 @@ public class SoundManagerScript : MonoBehaviour {
 
     public void PlayBGM(int key)
     {
+        if(bgm.isPlaying)
+        {
+            bgm.Stop();
+        }
         bgm.clip = bgmList[key];
         bgm.Play();
     }

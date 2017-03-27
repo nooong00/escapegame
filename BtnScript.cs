@@ -11,7 +11,7 @@ public class BtnScript : MonoBehaviour {
     {
         num = n;
         transform.FindChild("Text").GetComponent<Text>().text = str;
-        obj = GameObject.Find("GameManager").GetComponent<MenuScript>();
+        obj = GameObject.Find("Manager").GetComponent<MenuScript>();
 
     }
 

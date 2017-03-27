@@ -12,7 +12,7 @@ public enum MakerState
 
 public class GameManagerScript : MonoBehaviour {
     const int rankNum = 5;
-
+    
     public static GameManagerScript instance;
 
     public int mapWidth;
@@ -43,6 +43,10 @@ public class GameManagerScript : MonoBehaviour {
     private ObjMakerScript bombMaker;
     private ScoreScript scoreData;
     private PlayerData playerData;
+    private BinaryFileScript fileManager;
+
+    string playerDataFilePath;
+    string scoreFilePath;
 
     void Awake()
     {
@@ -55,6 +59,7 @@ public class GameManagerScript : MonoBehaviour {
             }
         }
 
+        gameObject.AddComponent<SoundManagerScript>();
         LoadAssets();
 
         rootLife = GameObject.Find("lifePos");
@@ -62,9 +67,12 @@ public class GameManagerScript : MonoBehaviour {
         coinTxt = GameObject.Find("coinTxt").GetComponent<Text>();
         coinMaker = gameObject.AddComponent<ObjMakerScript>();
         bombMaker = gameObject.AddComponent<ObjMakerScript>();
-        scoreData = gameObject.AddComponent<ScoreScript>();   
-        playerData = gameObject.AddComponent<PlayerData>();
 
+        scoreData = new ScoreScript();
+
+        fileManager = new BinaryFileScript();
+        playerDataFilePath = Application.dataPath + "/Data/playerdata.bin";
+        scoreFilePath = Application.dataPath + "/Data/score.bin";
     }
 
     void LoadAssets()
@@ -89,12 +97,13 @@ public class GameManagerScript : MonoBehaviour {
         }
 
         readyTime = GameObject.Find("ReadyTime");
+        playerData = fileManager.LoadData<PlayerData>(playerDataFilePath);
 
-        scoreData.InitScore();
-        playerData.init();
+        scoreData.scores = fileManager.LoadData<List<int>>(scoreFilePath);
+
         score = 0;
         scoreTxt.text = score.ToString();
-      
+        moveX = 40.0f;
     }
 
     void setLifeImg(int n)
@@ -130,7 +139,7 @@ public class GameManagerScript : MonoBehaviour {
 
     IEnumerator CoCount()
     {
-        yield return new WaitForSeconds(1.0f);
+        yield return new WaitForSeconds(0.5f);
         for(int i = 3; i > 0; --i)
         {
             readyTime.GetComponent<Text>().text = i.ToString();
@@ -153,16 +162,16 @@ public class GameManagerScript : MonoBehaviour {
         coinMaker.StopSpawn();
         bombMaker.StopSpawn();
         StopCoroutine("CoGetScore");
-        //폭탄 생성도 취소...
-        
+   
         scoreData.AddScore(score);
-        playerData.playerData.coin += coin;
-        playerData.SaveData();
+        fileManager.SaveData<List<int>>(scoreData.scores, scoreFilePath);
+        playerData.coin += coin;
+        fileManager.SaveData<PlayerData>(playerData, playerDataFilePath);
 
         DestroyTag("Bomb");
         DestroyTag("DamagedObj");
         DestroyTag("Item");
-        //임시
+    
         StartCoroutine("CoChangeScene");
     }
 
@@ -178,6 +187,7 @@ public class GameManagerScript : MonoBehaviour {
     IEnumerator CoChangeScene()
     {
         yield return new WaitForSeconds(2.0f);
+        instance = null;
         SceneManager.LoadScene("MenuScene");
     }
 

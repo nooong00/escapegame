@@ -3,7 +3,7 @@ using System.IO;
 
 public class BinaryFileScript {
 
-    public void BinarySerialize<T>(T t, string filePath)
+    public void SaveData<T>(T t, string filePath)
     {
         BinaryFormatter formatter = new BinaryFormatter();
         FileStream stream = new FileStream(filePath, FileMode.Create);
@@ -13,7 +13,7 @@ public class BinaryFileScript {
     }
 
 
-    public T BinaryDeserialize<T>(string filePath)
+    public T LoadData<T>(string filePath)
     {
         BinaryFormatter formatter = new BinaryFormatter();
         FileStream stream = new FileStream(filePath, FileMode.Open);

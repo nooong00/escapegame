@@ -68,7 +68,12 @@ public class ObjMakerScript : MonoBehaviour {
             if(state == MakerState.BOMB)
             {
                 tmp.GetComponent<BombScript>().initPos(posX, posY);
-            }           
+            }        
+            else if(state == MakerState.COIN)
+            {
+                tmp.GetComponent<CoinScript>().SetTimer(5.0f);
+                tmp.GetComponent<CoinScript>().Play();
+            }   
         }
     }
 
