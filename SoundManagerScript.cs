@@ -11,25 +11,20 @@ public class SoundManagerScript : MonoBehaviour {
     public List<AudioClip> bgmList;
     public List<AudioClip> seList;
 
-    bool loaded;
-	// Use this for initialization
-	void Awake () {
+    public void Init()
+    {
         if (instance == null)
         {
             instance = this;
-            loaded = false;
-        }
-        bgm = gameObject.AddComponent<AudioSource>();
-        bgm.volume = 0.1f;
-        bgm.loop = true;
-
-        se = gameObject.AddComponent<AudioSource>();
-        se.volume = 0.1f;
-
-        if (!loaded)
-        {
             bgmList = new List<AudioClip>();
             seList = new List<AudioClip>();
+
+            bgm = gameObject.AddComponent<AudioSource>();
+            bgm.volume = 0.1f;
+            bgm.loop = true;
+
+            se = gameObject.AddComponent<AudioSource>();
+            se.volume = 0.1f;
 
             LoadAssets();
         }
@@ -37,8 +32,6 @@ public class SoundManagerScript : MonoBehaviour {
     
     public void LoadAssets()
     {
-        loaded = true;
-
         AudioClip[] bgms = Resources.LoadAll<AudioClip>("Music/BGM");
         for (int i = 0; i < bgms.Length; ++i)
         {

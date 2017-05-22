@@ -6,14 +6,15 @@ using System;
 
 [Serializable]
 public class PlayerData {    
-    public List<int> charList;
-    public List<int> mapList;
+    public List<ItemData> charList;
+    public List<ItemData> mapList;
     public int coin;
 
     public PlayerData()
     {
-        charList = new List<int>();
-        mapList = new List<int>();
+        charList = new List<ItemData>();
+        mapList = new List<ItemData>();
         coin = 0;
     }
+
 }

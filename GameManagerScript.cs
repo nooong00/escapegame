@@ -42,24 +42,18 @@ public class GameManagerScript : MonoBehaviour {
     private ObjMakerScript coinMaker;
     private ObjMakerScript bombMaker;
     private ScoreScript scoreData;
-    private PlayerData playerData;
     private BinaryFileScript fileManager;
 
-    string playerDataFilePath;
     string scoreFilePath;
 
     void Awake()
     {
-        if(!instance)
+        if (!instance)
         {
             instance = this;
-            if(!instance)
-            {
-                Debug.Log("GameManager Error");
-            }
         }
-
-        gameObject.AddComponent<SoundManagerScript>();
+        Screen.SetResolution(720, 1280, true);
+        GetComponent<MapCreater>().init();
         LoadAssets();
 
         rootLife = GameObject.Find("lifePos");
@@ -68,11 +62,16 @@ public class GameManagerScript : MonoBehaviour {
         coinMaker = gameObject.AddComponent<ObjMakerScript>();
         bombMaker = gameObject.AddComponent<ObjMakerScript>();
 
+        mapWidth = GameData.instance.mapDataList[GameData.instance.selectedMap].width;
+        mapHeight = GameData.instance.mapDataList[GameData.instance.selectedMap].height;
+
         scoreData = new ScoreScript();
 
         fileManager = new BinaryFileScript();
-        playerDataFilePath = Application.dataPath + "/Data/playerdata.bin";
-        scoreFilePath = Application.dataPath + "/Data/score.bin";
+
+        scoreFilePath = Application.persistentDataPath + "/score.bin";
+        SetChar();
+  
     }
 
     void LoadAssets()
@@ -81,6 +80,12 @@ public class GameManagerScript : MonoBehaviour {
         lifeObj = Resources.Load<GameObject>("Prefabs/UI/lifeImg");
         coinObj = Resources.Load<GameObject>("Prefabs/coin");
         bombObj = Resources.Load<GameObject>("Prefabs/bomb");
+    }
+
+    void SetChar()
+    {       
+        GameObject charObj = Instantiate(Resources.Load<GameObject>("Prefabs/player"), getPos(0, 0), transform.rotation);
+        charObj.transform.FindChild("char").GetComponent<Animator>().runtimeAnimatorController = Resources.LoadAll<RuntimeAnimatorController>("Animator")[GameData.instance.selectedChar];
     }
 
     void InitGameScene()
@@ -97,13 +102,12 @@ public class GameManagerScript : MonoBehaviour {
         }
 
         readyTime = GameObject.Find("ReadyTime");
-        playerData = fileManager.LoadData<PlayerData>(playerDataFilePath);
 
         scoreData.scores = fileManager.LoadData<List<int>>(scoreFilePath);
 
         score = 0;
         scoreTxt.text = score.ToString();
-        moveX = 40.0f;
+        moveX = 120.0f;
     }
 
     void setLifeImg(int n)
@@ -132,9 +136,9 @@ public class GameManagerScript : MonoBehaviour {
         bombMaker.SetState(MakerState.BOMB);
 
              
-        setLifeImg(3);
+        setLifeImg(GameData.instance.charDataList[GameData.instance.selectedChar].life);
         StartCoroutine("CoCount");
-        SoundManagerScript.instance.PlayBGM(1);
+        SoundManagerScript.instance.PlayBGM(GameData.instance.selectedMap + 1);
     }
 
     IEnumerator CoCount()
@@ -165,8 +169,8 @@ public class GameManagerScript : MonoBehaviour {
    
         scoreData.AddScore(score);
         fileManager.SaveData<List<int>>(scoreData.scores, scoreFilePath);
-        playerData.coin += coin;
-        fileManager.SaveData<PlayerData>(playerData, playerDataFilePath);
+        GameData.instance.playerData.coin += coin;
+        GameData.instance.SavePlayerData();
 
         DestroyTag("Bomb");
         DestroyTag("DamagedObj");
@@ -193,13 +197,13 @@ public class GameManagerScript : MonoBehaviour {
 
     public void GetCoin()
     {
-        coin++;
+        coin += 20;
         coinTxt.text = coin.ToString();
     }
 
     public Vector3 getPos(int x, int y)
     {
-        return new Vector3(startPos.x + (x * tileUnit), startPos.y + (y * tileUnit), startPos.z);
+        return new Vector3(startPos.x + (x * tileUnit), startPos.y + (y * tileUnit), startPos.z - 1);
     }
     IEnumerator CoGetScore()
     {

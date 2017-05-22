@@ -12,7 +12,6 @@ public class BtnScript : MonoBehaviour {
         num = n;
         transform.FindChild("Text").GetComponent<Text>().text = str;
         obj = GameObject.Find("Manager").GetComponent<MenuScript>();
-
     }
 
     public void Clicked()
@@ -22,7 +21,7 @@ public class BtnScript : MonoBehaviour {
 
     IEnumerator CoClicked()
     {
-
+        if (obj == null) yield break;
         obj.PlayMenu(num);
         yield return new WaitForSeconds(1.0f);
     }

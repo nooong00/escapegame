@@ -47,13 +47,119 @@ enum Dir
         damaged = false;
 //        invisibleColor = new Color(1, 1, 1, 0);
         playerRenderer = transform.FindChild("char").GetComponent<SpriteRenderer>();
-        life = 3;
+        life = GameData.instance.charDataList[GameData.instance.selectedChar].life;
+
+        mapWidth = GameObject.Find("GameManager").GetComponent<MapCreater>().mapWidth;
+        mapHeight = GameObject.Find("GameManager").GetComponent<MapCreater>().mapHeight;
+
+ StartCoroutine("CO1");
+
+//        StartCoroutine("CO2");
+
     }
-	
+    Vector2 touchPos;
+    IEnumerator CO1()
+    {
+        Touch touch;
+        while(true)
+        {
+            if(Input.touches.Length > 0)
+            {
+                if(state == PlayerState.IDLE)
+                {
+                    touch = Input.GetTouch(0);
+                    if (touch.phase == TouchPhase.Began)
+                    {
+                        touchPos = touch.position;
+                    }
+                    else if (touch.phase == TouchPhase.Moved)
+                    {
+                        if (Vector2.Distance(touchPos, touch.position) > 50.0f)
+                        {
+                            if (touchPos != Vector2.zero)
+                            {
+                                Move(getDir(touchPos - touch.position));
+                                touchPos = Vector2.zero;
+                            }
+                        }
+                    }
+                }
+                yield return null;
+            }
+            yield return null;
+        }
+    }
+
+
+    IEnumerator CO2()
+    {
+        bool moved = false;
+        Vector3 mousePos = Vector3.zero;
+        while (true)
+        {
+            if(Input.GetMouseButtonDown(0))
+            {
+                mousePos = Input.mousePosition;
+            }
+            else if(Input.GetMouseButton(0))
+            {
+                if (Vector2.Distance(mousePos, Input.mousePosition) > 50.0f)
+                {
+                    if (!moved)
+                    {
+                        Move(getDir(mousePos - Input.mousePosition));
+                        moved = true;
+                    }
+                }
+            }
+            else if(Input.GetMouseButtonUp(0))
+            {
+                moved = false;
+            }
+
+            yield return null;
+        }
+    }
+
+
+
+
+
+
+
+    Dir getDir(Vector2 p)
+    {
+        //방향 리턴
+        if(Mathf.Abs(p.x) > Mathf.Abs(p.y))//hrizontal
+        {
+            if(p.x > 0)
+            {
+                return Dir.LEFT;
+            }
+            else
+            {
+                return Dir.RIGHT;
+            }
+        }
+        else
+        {
+            if(p.y > 0)
+            {
+                return Dir.DOWN;
+            }
+            else
+            {
+                return Dir.UP;
+            }
+        }
+    }
+
+    /*
 	// Update is called once per frame
 	void Update () {
         if(state == PlayerState.IDLE)
         {
+           
             if (Input.GetKeyDown(KeyCode.W))
             {
                 if (posY > 5) return;
@@ -74,12 +180,22 @@ enum Dir
                 if (posX > 5) return;
                 Move(Dir.RIGHT);
             }
-        }
 
+         
+        }
+    
     }
+    */
+
+    int mapWidth;
+    int mapHeight;
 
     bool Movable(int x, int y)
     {
+        if (x < 0) return false;
+        else if (x > mapWidth - 1) return false;
+        else if (y < 0) return false;
+        else if (y > mapHeight - 1) return false;
         return (GameManagerScript.instance.mapCheck[x, y] == 0 || GameManagerScript.instance.mapCheck[x, y] == 1);
     }
 
@@ -90,6 +206,7 @@ enum Dir
         {
             case Dir.UP:
                 if (!Movable(posX, posY + 1)) return;
+
                 animator.SetTrigger("up");
                 posY++;                
                 break;
