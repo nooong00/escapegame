@@ -4,4 +4,6 @@ public class CharData {
     public int life;
     public int speed;
     public int pay;
+    public bool having;
+    public int path;
 }

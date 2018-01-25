@@ -10,18 +10,13 @@ public class MapCreater : MonoBehaviour {
     public Vector3 startPos;
     int tileNum;
     string tilePath;
-    void Start()
-    {
-        tileNum = 0;
-//        CreateMap();
-    }
 
     public void init()
     {
+        tileNum = 0;
         tilePath = "Prefabs/Tile/";
-        mapWidth = GameData.instance.mapDataList[GameData.instance.selectedMap].width;
-
-        mapHeight = GameData.instance.mapDataList[GameData.instance.selectedMap].height;
+        mapWidth = GameData.instance.mapDataList[GameData.instance.playerData.mapList[GameData.instance.selectedMap]].width;
+        mapHeight = GameData.instance.mapDataList[GameData.instance.playerData.mapList[GameData.instance.selectedMap]].height;
 
         tiles = Resources.LoadAll<GameObject>(tilePath + GameData.instance.selectedMap);
 

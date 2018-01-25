@@ -9,11 +9,7 @@ public class LogoScript : MonoBehaviour {
     {
         Screen.SetResolution(720, 1280, true);
         logo = GameObject.Find("Logo").GetComponent<SpriteRenderer>();
-        GameData d = gameObject.AddComponent<GameData>();
-        d.init();
-        SoundManagerScript s = gameObject.AddComponent<SoundManagerScript>();
-        s.Init();
-        DontDestroyOnLoad(this);
+
         StartCoroutine("LogoAnim", 0);
         StartCoroutine("NextScene");
     }
@@ -24,12 +20,14 @@ public class LogoScript : MonoBehaviour {
         c.a = a;
         float alpha = 0.05f;
         if (a == 1) alpha = -alpha;
+
         for(int i = 0; i < 20; ++i)
         {
             c.a += alpha;
             logo.color = c;
             yield return new WaitForSeconds(0.1f);
         }
+
         if (a == 0) StartCoroutine("LogoAnim", 1);
     }
 

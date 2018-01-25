@@ -10,7 +10,7 @@ public class BtnScript : MonoBehaviour {
 	public void init(int n, string str)
     {
         num = n;
-        transform.FindChild("Text").GetComponent<Text>().text = str;
+        transform.Find("Text").GetComponent<Text>().text = str;
         obj = GameObject.Find("Manager").GetComponent<MenuScript>();
     }
 

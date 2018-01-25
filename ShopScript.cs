@@ -33,15 +33,12 @@ public class ShopScript : MonoBehaviour {
     string strPrice = "가격\n";
     Vector3 firstPos;
 
-    List<GameObject> tmpList;
-    ItemDataScript[] itemDataList;
-
+    List<int> itemObjList;
+    List<GameObject> objList;
     // Use this for initialization
     void Awake () {
-
-        tmpList = new List<GameObject>();
-
-        itemDataList = new ItemDataScript[GameData.instance.itemList.Count];
+        itemObjList = new List<int>();
+        objList = new List<GameObject>();
 
         rootContent = GameObject.Find("Content");
         itemPrefab = Resources.Load<GameObject>("Prefabs/UI/ItemImg");
@@ -63,7 +60,7 @@ public class ShopScript : MonoBehaviour {
 
         LoadList();
 
-        rootContent.GetComponent<RectTransform>().sizeDelta = new Vector2(200 + (GameData.instance.itemList.Count * 600), rootContent.GetComponent<RectTransform>().rect.height);
+        rootContent.GetComponent<RectTransform>().sizeDelta = new Vector2(200 + ((GameData.instance.mapDataList.Count + GameData.instance.charDataList.Count) * 600), rootContent.GetComponent<RectTransform>().rect.height);
         firstPos = rootContent.transform.position;
 
         ActiveObjs(false);
@@ -73,35 +70,45 @@ public class ShopScript : MonoBehaviour {
     void LoadList()
     {
         rootContent.transform.position = firstPos;
-        for (int i = 0; i < GameData.instance.itemList.Count; ++i)
+
+        
+        foreach (KeyValuePair<int, CharData> tmp in GameData.instance.charDataList)
         {
-            GameObject obj = Instantiate<GameObject>(itemPrefab, new Vector3(-300 * (GameData.instance.itemList.Count - 1) + (600 * i), 0, 0), transform.rotation);
-            obj.GetComponent<ItemDataScript>().SetData(GameData.instance.itemList[i]);
-            itemDataList[i] = obj.GetComponent<ItemDataScript>();
+            itemObjList.Add(tmp.Key);
+        }
+
+        foreach (KeyValuePair<int, MapData> tmp in GameData.instance.mapDataList)
+        {
+            itemObjList.Add(tmp.Key);
+        }
+
+        GameObject obj;
+
+        for (int i = 0; i < itemObjList.Count; ++i)
+        {
+            obj = Instantiate<GameObject>(itemPrefab, new Vector3(-300 * (itemObjList.Count - 1) + (600 * i), 0, 0), transform.rotation);
+            if(itemObjList[i] > 1999) //map
+            {
+                obj.GetComponent<Image>().sprite = GameData.instance.mapSprite[GameData.instance.mapDataList[itemObjList[i]].path];
+                if(GameData.instance.mapDataList[itemObjList[i]].having)
+                {
+                    obj.GetComponent<SelectedItemScript>().Selected();
+                }
+            }
+            else
+            {
+                obj.GetComponent<Image>().sprite = GameData.instance.charSprite[GameData.instance.charDataList[itemObjList[i]].path];
+                if(GameData.instance.charDataList[itemObjList[i]].having)
+                {
+                    obj.GetComponent<SelectedItemScript>().Selected();
+                }
+            }
             obj.transform.SetParent(rootContent.transform, false);
-            
-            if(itemDataList[i].data.type == ItemType.MAP)
-            {
-                obj.GetComponent<Image>().sprite = GameData.instance.mapSprite[itemDataList[i].data.path];
-            }
-            else if(itemDataList[i].data.type == ItemType.CHARACTER)
-            {
-                obj.GetComponent<Image>().sprite = GameData.instance.charSprite[itemDataList[i].data.path];
-            }
 
-
-            if(obj.GetComponent<ItemDataScript>().data.having)
-            {
-                obj.GetComponent<SelectedItemScript>().Selected();
-            }
-            tmpList.Add(obj);
+            objList.Add(obj);
             
         }
-        
-        selectedIconObj.GetComponent<SelectedIconScript>().SetPosition(tmpList[targetNum].transform.position.x);
-
-        SetPrice(itemDataList[targetNum].data.pay);
-
+       
     }
 
     void MakeBtn()
@@ -146,6 +153,31 @@ public class ShopScript : MonoBehaviour {
         selectedIconObj.GetComponent<SelectedIconScript>().EnableScript(b);
     }
 
+    bool HavingItem(int k)
+    {
+        if (k > 1999) //map
+        {
+            if (GameData.instance.mapDataList.ContainsKey(k)) return GameData.instance.mapDataList[k].having;
+        }
+        else
+        {
+            if (GameData.instance.charDataList.ContainsKey(k)) return GameData.instance.charDataList[k].having; 
+        }
+        return false;
+    }
+    int GetPay(int k)
+    {
+        if (k > 1999) //map
+        {
+            if (GameData.instance.mapDataList.ContainsKey(k)) return GameData.instance.mapDataList[k].pay;
+        }
+        else
+        {
+            if (GameData.instance.charDataList.ContainsKey(k)) return GameData.instance.charDataList[k].pay;
+        }
+        return 0;
+    }
+
     void ClickBtn(SHOPBUTTONSTATE s)
     {
         if(s == SHOPBUTTONSTATE.PREV)
@@ -155,26 +187,29 @@ public class ShopScript : MonoBehaviour {
         }
         else if(s == SHOPBUTTONSTATE.NEXT)
         {
-            if (targetNum > itemDataList.Length - 2) return;
+            if (targetNum > itemObjList.Count - 2) return;
             StartCoroutine("CoMoveList", s);
         }
         else if(s == SHOPBUTTONSTATE.BUY)
         {
-            if (itemDataList[targetNum].data.having) return;
-            if (GameData.instance.playerData.coin < itemDataList[targetNum].data.pay) return;
-            GameData.instance.playerData.coin -= itemDataList[targetNum].data.pay;
-            if(itemDataList[targetNum].data.type == ItemType.MAP)
+            if (HavingItem(itemObjList[targetNum])) return;
+            if (GameData.instance.playerData.coin < GetPay(itemObjList[targetNum])) return;
+            GameData.instance.playerData.coin -= GetPay(itemObjList[targetNum])
+                ;
+            if(itemObjList[targetNum] > 1999)
             {
-                GameData.instance.playerData.mapList.Add(itemDataList[targetNum].data);
+                GameData.instance.playerData.mapList.Add(itemObjList[targetNum]);
+                GameData.instance.mapDataList[itemObjList[targetNum]].having = true;
             }
-            else if(itemDataList[targetNum].data.type == ItemType.CHARACTER)
+            else
             {
-                GameData.instance.playerData.charList.Add(itemDataList[targetNum].data);
+                GameData.instance.playerData.charList.Add(itemObjList[targetNum]);
+                GameData.instance.charDataList[itemObjList[targetNum]].having = true;
             }
+
             GameData.instance.SavePlayerData();
             GetComponent<MenuScript>().viewCoin();
-            itemDataList[targetNum].data.having = true;
-            tmpList[targetNum].GetComponent<SelectedItemScript>().Selected();
+            objList[targetNum].GetComponent<SelectedItemScript>().Selected();
             SoundManagerScript.instance.PlaySE(3);
         }
 
@@ -183,14 +218,17 @@ public class ShopScript : MonoBehaviour {
     IEnumerator CoMoveList(SHOPBUTTONSTATE s)
     {
         float t = 0.0f;
-        if(s == SHOPBUTTONSTATE.PREV)
+
+        if (s == SHOPBUTTONSTATE.PREV)
         {
             targetNum--;
-            SetPrice(itemDataList[targetNum].data.pay);
+            SetPrice(GetPay(itemObjList[targetNum]));
+
             while (t < 0.5f)
             {
+
+
                 rootContent.transform.Translate(Vector3.right * Time.deltaTime * moveSpeed);
-                
                 t += Time.deltaTime;
                 yield return null;
             }            
@@ -198,7 +236,9 @@ public class ShopScript : MonoBehaviour {
         else if(s == SHOPBUTTONSTATE.NEXT)
         {
             targetNum++;
-            SetPrice(itemDataList[targetNum].data.pay);
+            SetPrice(GetPay(itemObjList[targetNum]));
+
+            
             while (t < 0.5f)
             {
                 rootContent.transform.Translate(Vector3.left * Time.deltaTime * moveSpeed);
@@ -206,8 +246,7 @@ public class ShopScript : MonoBehaviour {
                 yield return null;
             }
         }
-        selectedIconObj.GetComponent<SelectedIconScript>().SetPosition(tmpList[targetNum].transform.position.x);
-    }
+   }
 
 	
     public void ClosedShop()

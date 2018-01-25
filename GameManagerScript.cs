@@ -18,11 +18,14 @@ public class GameManagerScript : MonoBehaviour {
     public int mapWidth;
     public int mapHeight;
     public float tileUnit;
-    public int[,] mapCheck; //0 아무것도 없음, 1 오브젝트 2 이동불가 오브젝트
+    public int[,] mapCheck; //0 null, 1 obj
 
+
+    //prefab
     public GameObject coinObj;
     public GameObject fireObj;
     public GameObject bombObj;
+
 
     private Vector3 startPos;
     private GameObject rootLife;
@@ -41,10 +44,18 @@ public class GameManagerScript : MonoBehaviour {
 
     private ObjMakerScript coinMaker;
     private ObjMakerScript bombMaker;
-    private ScoreScript scoreData;
+    private FireMakerScript fireMaker;
+    
     private BinaryFileScript fileManager;
 
     string scoreFilePath;
+
+
+    public Stack<GameObject> bombPool;
+    public Stack<GameObject> firePool;
+    public Stack<GameObject> coinPool;
+
+    PlayerControlScript player;
 
     void Awake()
     {
@@ -53,25 +64,59 @@ public class GameManagerScript : MonoBehaviour {
             instance = this;
         }
         Screen.SetResolution(720, 1280, true);
+
         GetComponent<MapCreater>().init();
         LoadAssets();
 
         rootLife = GameObject.Find("lifePos");
         scoreTxt = GameObject.Find("scoreTxt").GetComponent<Text>();
         coinTxt = GameObject.Find("coinTxt").GetComponent<Text>();
+
+        mapWidth = GameData.instance.mapDataList[GameData.instance.playerData.mapList[GameData.instance.selectedMap]].width;
+        mapHeight = GameData.instance.mapDataList[GameData.instance.playerData.mapList[GameData.instance.selectedMap]].height;
+
         coinMaker = gameObject.AddComponent<ObjMakerScript>();
         bombMaker = gameObject.AddComponent<ObjMakerScript>();
-
-        mapWidth = GameData.instance.mapDataList[GameData.instance.selectedMap].width;
-        mapHeight = GameData.instance.mapDataList[GameData.instance.selectedMap].height;
-
-        scoreData = new ScoreScript();
-
-        fileManager = new BinaryFileScript();
-
+        fireMaker = gameObject.AddComponent<FireMakerScript>();
+     
         scoreFilePath = Application.persistentDataPath + "/score.bin";
         SetChar();
-  
+
+        bombPool = new Stack<GameObject>();
+        GameObject tmpObj;
+        for(int i = 0; i < 10; ++i)
+        {
+            tmpObj = Instantiate<GameObject>(bombObj);
+            bombPool.Push(tmpObj);
+        }
+
+        coinPool = new Stack<GameObject>();
+
+        for (int i = 0; i < 10; ++i)
+        {
+            tmpObj = Instantiate<GameObject>(coinObj);
+            tmpObj.GetComponent<CoinScript>().SetTimer(5.0f);
+            coinPool.Push(tmpObj);
+            
+        }
+
+        firePool = new Stack<GameObject>();
+
+        for (int i = 0; i < 40; ++i)
+        {
+            tmpObj = Instantiate<GameObject>(fireObj);
+            tmpObj.GetComponent<FireObjScript>().SetTimer(2.0f);
+            tmpObj.SetActive(false);
+            firePool.Push(tmpObj);
+        }
+
+        player = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerControlScript>();
+    }
+
+    public bool playerCheck(int x, int y)
+    {
+        
+        return (x == player.GetX() && y == player.GetY());
     }
 
     void LoadAssets()
@@ -85,7 +130,12 @@ public class GameManagerScript : MonoBehaviour {
     void SetChar()
     {       
         GameObject charObj = Instantiate(Resources.Load<GameObject>("Prefabs/player"), getPos(0, 0), transform.rotation);
-        charObj.transform.FindChild("char").GetComponent<Animator>().runtimeAnimatorController = Resources.LoadAll<RuntimeAnimatorController>("Animator")[GameData.instance.selectedChar];
+        charObj.transform.Find("char").GetComponent<Animator>().runtimeAnimatorController = Resources.LoadAll<RuntimeAnimatorController>("Animator")[GameData.instance.selectedChar];
+    }
+
+    public void MakeFire(int x, int y)
+    {
+        fireMaker.Play(x, y);
     }
 
     void InitGameScene()
@@ -103,11 +153,11 @@ public class GameManagerScript : MonoBehaviour {
 
         readyTime = GameObject.Find("ReadyTime");
 
-        scoreData.scores = fileManager.LoadData<List<int>>(scoreFilePath);
-
         score = 0;
         scoreTxt.text = score.ToString();
         moveX = 120.0f;
+
+        coin = 0;
     }
 
     void setLifeImg(int n)
@@ -126,17 +176,15 @@ public class GameManagerScript : MonoBehaviour {
     {
         InitGameScene();
         coinMaker.Init();
-        coinMaker.SetObject(coinObj);
         coinMaker.SetTime(3.0f);
         coinMaker.SetState(MakerState.COIN);
 
         bombMaker.Init();
-        bombMaker.SetObject(bombObj);
         bombMaker.SetTime(1.0f);
         bombMaker.SetState(MakerState.BOMB);
 
              
-        setLifeImg(GameData.instance.charDataList[GameData.instance.selectedChar].life);
+        setLifeImg(GameData.instance.charDataList[GameData.instance.playerData.charList[GameData.instance.selectedChar]].life);
         StartCoroutine("CoCount");
         SoundManagerScript.instance.PlayBGM(GameData.instance.selectedMap + 1);
     }
@@ -166,9 +214,9 @@ public class GameManagerScript : MonoBehaviour {
         coinMaker.StopSpawn();
         bombMaker.StopSpawn();
         StopCoroutine("CoGetScore");
-   
-        scoreData.AddScore(score);
-        fileManager.SaveData<List<int>>(scoreData.scores, scoreFilePath);
+
+        GameData.instance.scoreData.AddScore(score);
+        fileManager.SaveData<List<int>>(GameData.instance.scoreData.scores, scoreFilePath);
         GameData.instance.playerData.coin += coin;
         GameData.instance.SavePlayerData();
 

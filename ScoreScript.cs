@@ -1,10 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
-using System;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.IO;
+﻿using System.Collections.Generic;
 
 
 public class ScoreScript {
@@ -18,12 +12,19 @@ public class ScoreScript {
 
     public void AddScore(int n)
     {
-        scores.Add(n);
-        scores.Sort();
-        scores.Reverse();
-        if(scores.Count > num)
+        if(scores.Count < num)
         {
-            scores.RemoveAt(num);
+            scores.Add(n);
+        }
+        else
+        {
+            if (scores[scores.Count - 1] > n)
+            {
+                return;
+            }
+
+            scores[scores.Count - 1] = n;
+            scores.Sort();
         }
     }
     

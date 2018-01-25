@@ -1,5 +1,4 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
@@ -23,7 +22,6 @@ public class MenuScript : MonoBehaviour {
     //상수
     string[] menus = { "시작", "점수", "상점", "종료" };
     
-    string scoreFilePath;
     const int rankingNum = 5;
     float moveY = 200.0f;
     int keyMenuBGM = 0;
@@ -45,9 +43,6 @@ public class MenuScript : MonoBehaviour {
     GameObject panelBackBtn;
     GameObject coinImg;
     GameObject coinTxt;
-
-    BinaryFileScript fileManager;
-    ScoreScript scoreObj;
 
     GameObject shopListObj;
     GameObject startBtn;
@@ -94,8 +89,8 @@ public class MenuScript : MonoBehaviour {
 
         Instantiate(Resources.Load<GameObject>("Prefabs/BG"));
 
-        panelTxt = menuPanel.transform.FindChild("title").gameObject;
-        panelBackBtn = menuPanel.transform.FindChild("backbtn").gameObject;
+        panelTxt = menuPanel.transform.Find("title").gameObject;
+        panelBackBtn = menuPanel.transform.Find("backbtn").gameObject;
         menuPanel.SetActive(false);
 
         coinImg = Instantiate(Resources.Load<GameObject>("Prefabs/UI/CoinImg"), new Vector3(-300, 380, 0), transform.rotation);
@@ -111,26 +106,11 @@ public class MenuScript : MonoBehaviour {
         coinTxt.GetComponent<Text>().fontSize = 100;
         coinTxt.SetActive(false);
 
-        fileManager = new BinaryFileScript();
-
-        scoreFilePath = Application.persistentDataPath + "/score.bin";
-        scoreObj = new ScoreScript();
-        if (!System.IO.File.Exists(scoreFilePath))
-        {            
-            for(int i = 0; i < 5; ++i)
-            {
-                scoreObj.AddScore(i);
-            }
-            fileManager.SaveData<List<int>>(scoreObj.scores, scoreFilePath);                   
-        }
-        else scoreObj.scores = fileManager.LoadData<List<int>>(scoreFilePath);
-
         for (int i = 0; i < rankingNum; ++i)
         {
-            rankingScore[i] = Instantiate(txtObj, rootTxt.transform.position + (Vector3.down * moveY * i), transform.rotation);
+            rankingScore[i] = Instantiate<GameObject>(txtObj);
+            rankingScore[i].transform.position = rootTxt.transform.position + (Vector3.down * moveY * (rankingNum - 1 - i));
             rankingScore[i].transform.SetParent(rootTxt.transform, false);
-            rankingScore[i].transform.localScale = new Vector3(1, 1, 1);
-            rankingScore[i].GetComponent<Text>().text = (i + 1) + ". " + scoreObj.scores[i];
         }
 
         rootTxt.SetActive(false);
@@ -143,7 +123,7 @@ public class MenuScript : MonoBehaviour {
         startBtn = Instantiate<GameObject>(buttonObj, new Vector3(200, -550, 0), transform.rotation);
         startBtn.transform.SetParent(menuPanel.transform, false);
         startBtn.GetComponent<Button>().onClick.AddListener(() => ClickButton(BUTTONSTATE.START));
-        startBtn.transform.FindChild("Text").GetComponent<Text>().text = menus[0];
+        startBtn.transform.Find("Text").GetComponent<Text>().text = menus[0];
 
         changeBtn = new GameObject[4];
         changeBtn[0] = Instantiate<GameObject>(GameData.instance.prefabBtn);
@@ -190,6 +170,14 @@ public class MenuScript : MonoBehaviour {
         EnableStartMenu(false);
     }
 
+    void RenewScore()
+    {
+        for (int i = 0; i < 5; ++i)
+        {
+            rankingScore[i].GetComponent<Text>().text = ((rankingNum - i - 1) + 1) + ". " + GameData.instance.scoreData.scores[i];
+        }
+    }
+
     void CreateMenu()
     {
         for (int i = 0; i < menus.Length; ++i)
@@ -213,30 +201,30 @@ public class MenuScript : MonoBehaviour {
         {
             case BUTTONSTATE.START:
                 EnableStartMenu(false);
-                GameData.instance.selectedChar = GameData.instance.playerData.charList[charNum].path;
-                GameData.instance.selectedMap = GameData.instance.playerData.mapList[mapNum].path;
+                GameData.instance.selectedChar = charNum;
+                GameData.instance.selectedMap = mapNum;
 
                 SceneManager.LoadScene("Test01");
                 break;
             case BUTTONSTATE.MAPUP:
                 mapNum++;
                 if (mapNum > GameData.instance.playerData.mapList.Count - 1) mapNum = 0;
-                mapImg.GetComponent<Image>().sprite = GameData.instance.mapSprite[GameData.instance.playerData.mapList[mapNum].path];
+                mapImg.GetComponent<Image>().sprite = GameData.instance.mapSprite[GameData.instance.mapDataList[GameData.instance.playerData.mapList[mapNum]].path];
                 break;
             case BUTTONSTATE.MAPDOWN:
                 mapNum--;
                 if (mapNum < 0) mapNum = GameData.instance.playerData.mapList.Count - 1;
-                mapImg.GetComponent<Image>().sprite = GameData.instance.mapSprite[GameData.instance.playerData.mapList[mapNum].path];
+                mapImg.GetComponent<Image>().sprite = GameData.instance.mapSprite[GameData.instance.mapDataList[GameData.instance.playerData.mapList[mapNum]].path];
                 break;
             case BUTTONSTATE.CHARUP:
                 charNum++;
                 if (charNum > GameData.instance.playerData.charList.Count - 1) charNum = 0;
-                charImg.GetComponent<Image>().sprite = GameData.instance.charSprite[GameData.instance.playerData.charList[charNum].path];
+                charImg.GetComponent<Image>().sprite = GameData.instance.charSprite[GameData.instance.charDataList[GameData.instance.playerData.charList[charNum]].path];
                 break;
             case BUTTONSTATE.CHARDOWN:                
                 charNum--;
                 if (charNum < 0) charNum = GameData.instance.playerData.charList.Count - 1;
-                charImg.GetComponent<Image>().sprite = GameData.instance.charSprite[GameData.instance.playerData.charList[charNum].path];
+                charImg.GetComponent<Image>().sprite = GameData.instance.charSprite[GameData.instance.charDataList[GameData.instance.playerData.charList[charNum]].path];
                 break;
         }
     }
@@ -261,6 +249,7 @@ public class MenuScript : MonoBehaviour {
             case 1://점수
                 panelTxt.GetComponent<Text>().text = menus[n];
                 rootTxt.SetActive(true);
+                RenewScore();
                 break;
             case 2://상점
                 panelTxt.GetComponent<Text>().text = menus[n];

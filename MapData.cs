@@ -7,4 +7,6 @@ public class MapData {
     public int power;
     public int spawnTime;
     public int pay;
+    public bool having;
+    public int path;
 }

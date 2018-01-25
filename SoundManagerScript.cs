@@ -11,6 +11,11 @@ public class SoundManagerScript : MonoBehaviour {
     public List<AudioClip> bgmList;
     public List<AudioClip> seList;
 
+    void Awake()
+    {
+        Init();
+    }
+
     public void Init()
     {
         if (instance == null)
@@ -25,6 +30,8 @@ public class SoundManagerScript : MonoBehaviour {
 
             se = gameObject.AddComponent<AudioSource>();
             se.volume = 0.1f;
+
+            DontDestroyOnLoad(this);
 
             LoadAssets();
         }

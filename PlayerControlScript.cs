@@ -27,7 +27,7 @@ enum Dir
     PlayerState state;
     float speed = 3.0f;
 
-    //임시 변수
+  
     float tileUnit = 0.7f;
     Vector3 startPos;
 
@@ -38,23 +38,23 @@ enum Dir
 
     // Use this for initialization
     void Start () {
-        animator = transform.FindChild("char").GetComponent<Animator>();
+        animator = transform.Find("char").GetComponent<Animator>();
         
         state = PlayerState.IDLE;
         posX = 3;
         posY = 3;
         startPos.Set(-posX * tileUnit, -posY * tileUnit, 0.0f);
         damaged = false;
-//        invisibleColor = new Color(1, 1, 1, 0);
-        playerRenderer = transform.FindChild("char").GetComponent<SpriteRenderer>();
-        life = GameData.instance.charDataList[GameData.instance.selectedChar].life;
+
+        playerRenderer = transform.Find("char").GetComponent<SpriteRenderer>();
+        life = GameData.instance.charDataList[GameData.instance.playerData.charList[GameData.instance.selectedChar]].life;
 
         mapWidth = GameObject.Find("GameManager").GetComponent<MapCreater>().mapWidth;
         mapHeight = GameObject.Find("GameManager").GetComponent<MapCreater>().mapHeight;
 
- StartCoroutine("CO1");
+// StartCoroutine("CO1");모바일
 
-//        StartCoroutine("CO2");
+        StartCoroutine("CO2");
 
     }
     Vector2 touchPos;
@@ -90,6 +90,14 @@ enum Dir
         }
     }
 
+    public int GetX()
+    {
+        return posX;
+    }
+    public int GetY()
+    {
+        return posY;
+    }
 
     IEnumerator CO2()
     {
@@ -153,39 +161,6 @@ enum Dir
             }
         }
     }
-
-    /*
-	// Update is called once per frame
-	void Update () {
-        if(state == PlayerState.IDLE)
-        {
-           
-            if (Input.GetKeyDown(KeyCode.W))
-            {
-                if (posY > 5) return;
-                Move(Dir.UP);
-            }
-            else if (Input.GetKeyDown(KeyCode.S))
-            {
-                if (posY < 1) return;
-                Move(Dir.DOWN);
-            }
-            else if (Input.GetKeyDown(KeyCode.A))
-            {
-                if (posX < 1) return;
-                Move(Dir.LEFT);
-            }
-            else if (Input.GetKeyDown(KeyCode.D))
-            {
-                if (posX > 5) return;
-                Move(Dir.RIGHT);
-            }
-
-         
-        }
-    
-    }
-    */
 
     int mapWidth;
     int mapHeight;

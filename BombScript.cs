@@ -1,28 +1,41 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class BombScript : MonoBehaviour {
-    const float defaultTimer = 2.0f;
-    const int defaultPower = 2;
 
     public float readyTime; //생성
     public float idleTime;  //대기
     public float emergencyTime; //경고
 
-//    float timer;
     int posX;
     int posY;
 
     int power = 2;
 
 	// Use this for initialization
-	void Start () {
-//        timer = 0.0f;
-        power = defaultPower;
+    void Awake()
+    {
+        Init();
+    }
+
+    void Init()
+    {
+        power = 2;
         transform.GetComponent<SpriteRenderer>().color = new Color(1, 1, 1, 0);
+        gameObject.SetActive(false);
+    }
+
+    public void Play(int x, int y)
+    {
+        gameObject.SetActive(true);
+
+        posX = x;
+        posY = y;
+
+        transform.position = GameManagerScript.instance.getPos(x, y);
+
         StartCoroutine("CoReady");
-  	}
+    }
 
     public void initPos(int x, int y)
     {
@@ -59,11 +72,12 @@ public class BombScript : MonoBehaviour {
 
     IEnumerator CoAlive()
     {
-        int tmp = 0;
         while(true)
         {
-            setScale(tmp % 2);
-            tmp++;
+            setScale(0);
+            yield return new WaitForSeconds(0.5f);
+
+            setScale(1);
             yield return new WaitForSeconds(0.5f);
         }
 
@@ -74,48 +88,26 @@ public class BombScript : MonoBehaviour {
         yield return new WaitForSeconds(idleTime);
         transform.GetComponent<SpriteRenderer>().color = Color.red;
         yield return new WaitForSeconds(emergencyTime);
-
-        Instantiate(GameManagerScript.instance.fireObj, transform.position, transform.rotation).GetComponent<FireObjScript>().Play(defaultTimer);
-
-        for(int i = 1; i < power + 1; ++i)
+        
+        for(int i = -2; i < 3; ++i)
         {
-            if(posX + i < GameManagerScript.instance.mapWidth)
+            if(i == 0)
             {
-                if (GameManagerScript.instance.mapCheck[posX + i, posY] != 2)
-                {
-                    Instantiate(GameManagerScript.instance.fireObj, GameManagerScript.instance.getPos(posX + i, posY), transform.rotation).GetComponent<FireObjScript>().Play(defaultTimer);
-                }
+                GameManagerScript.instance.MakeFire(posX, posY);
             }
-            if(posX > i - 1)
+            else
             {
-                if (GameManagerScript.instance.mapCheck[posX - i, posY] != 2)
-                {
-                    Instantiate(GameManagerScript.instance.fireObj, GameManagerScript.instance.getPos(posX - i, posY), transform.rotation).GetComponent<FireObjScript>().Play(defaultTimer);
-                }
-            }
-        }
-
-        for (int i = 1; i < power + 1; ++i)
-        {
-            if(posY + i < GameManagerScript.instance.mapHeight)
-            {
-                if (GameManagerScript.instance.mapCheck[posX, posY + i] != 2)
-                {
-                    Instantiate(GameManagerScript.instance.fireObj, GameManagerScript.instance.getPos(posX, posY + i), transform.rotation).GetComponent<FireObjScript>().Play(defaultTimer);
-                }
-            }
-            if(posY > i - 1)
-            {
-                if (GameManagerScript.instance.mapCheck[posX, posY - i] != 2)
-                {
-                    Instantiate(GameManagerScript.instance.fireObj, GameManagerScript.instance.getPos(posX, posY - i), transform.rotation).GetComponent<FireObjScript>().Play(defaultTimer);
-                }
+                GameManagerScript.instance.MakeFire(posX + i, posY);
+                GameManagerScript.instance.MakeFire(posX, posY + i);
             }
         }
 
         SoundManagerScript.instance.PlaySE(0);
         GameManagerScript.instance.mapCheck[posX, posY] = 0;
-        Destroy(gameObject);
+
+        transform.GetComponent<SpriteRenderer>().color = new Color(1, 1, 1, 0);
+        gameObject.SetActive(false);
+        GameManagerScript.instance.bombPool.Push(gameObject);
     }
 
 }

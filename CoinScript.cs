@@ -1,18 +1,31 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class CoinScript : MonoBehaviour  {
     public float timer;
+    int posX;
+    int posY;
 
     public void SetTimer(float t)
     {
         timer = t;
     }
 
-    public void Play()
+    public void Play(int x, int y)
     {
-        Destroy(gameObject, timer);
+        gameObject.SetActive(true);
+        posX = x;
+        posY = y;
+        transform.position = GameManagerScript.instance.getPos(x, y);
+        StartCoroutine("CoPlay");
+    }
+
+    IEnumerator CoPlay()
+    {
+        yield return new WaitForSeconds(timer);
+        gameObject.SetActive(false);
+        GameManagerScript.instance.mapCheck[posX, posY] = 0;
+        GameManagerScript.instance.coinPool.Push(gameObject);
     }
 
     void OnTriggerEnter2D(Collider2D col)
@@ -20,7 +33,9 @@ public class CoinScript : MonoBehaviour  {
         if(col.CompareTag("Player"))
         {
             GameManagerScript.instance.GetCoin();
-            Destroy(gameObject);
+            gameObject.SetActive(false);
+            GameManagerScript.instance.mapCheck[posX, posY] = 0;
+            GameManagerScript.instance.coinPool.Push(gameObject);
         }
     }
 

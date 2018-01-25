@@ -10,19 +10,27 @@ public class FireObjScript : MonoBehaviour {
         timer = t;
     }
 
-    public void Play(float t)
+    public void Play(int x, int y)
     {
-        Destroy(gameObject, t);
+        gameObject.SetActive(true);
+        transform.position = GameManagerScript.instance.getPos(x, y);
+        StartCoroutine("CoPlay");
     }
 
-
+    IEnumerator CoPlay()
+    {
+        yield return new WaitForSeconds(timer);
+        gameObject.SetActive(false);
+        GameManagerScript.instance.firePool.Push(gameObject);
+    }
 
     void OnTriggerEnter2D(Collider2D col)
     {
         if(col.CompareTag("Player"))
         {
             col.GetComponent<PlayerControlScript>().GetDamage();
-            Destroy(gameObject);            
+            gameObject.SetActive(false);
+            GameManagerScript.instance.firePool.Push(gameObject);
         }
     }
 	

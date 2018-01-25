@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 public enum ItemType
@@ -11,10 +10,8 @@ public enum ItemType
 public class GameData : MonoBehaviour {
     public static GameData instance;
 
-    public List<MapData> mapDataList;
-    public List<CharData> charDataList;
-
-    public List<ItemData> itemList;
+    public Dictionary<int, MapData> mapDataList;
+    public Dictionary<int, CharData> charDataList;
 
     public GameObject prefabBtn;
     public GameObject prefabUIImg;
@@ -34,25 +31,34 @@ public class GameData : MonoBehaviour {
     string mapDataPath;
     string charDataPath;
     string playerDataFilePath;
+    string scoreFilePath;
 
     BinaryFileScript fileManager;
 
-    public void init()
+    public ScoreScript scoreData;
+
+    void Awake()
+    {
+        Init();
+    }
+
+    public void Init()
     {
       
         if (instance == null)
         {
             instance = this;
 
-  //          mapDataPath = Application.streamingAssetsPath + "/mapData.bin";
-    //        charDataPath = Application.streamingAssetsPath + "/charData.bin";
-          mapDataPath = "jar:file://" + Application.dataPath + @"!/assets/mapData.bin";
-          charDataPath = "jar:file://" + Application.dataPath + @"!/assets/charData.bin";
+            mapDataPath = Application.streamingAssetsPath + "/mapData.bin";
+            charDataPath = Application.streamingAssetsPath + "/charData.bin";
+//          mapDataPath = "jar:file://" + Application.dataPath + @"!/assets/mapData.bin";
+//          charDataPath = "jar:file://" + Application.dataPath + @"!/assets/charData.bin";
 
             playerDataFilePath = Application.persistentDataPath + "/playerdata.bin";
 
             fileManager = new BinaryFileScript();
-            itemList = new List<ItemData>();
+
+            DontDestroyOnLoad(this);
 
             LoadData();
         }        
@@ -60,11 +66,11 @@ public class GameData : MonoBehaviour {
 
 	void LoadData()
     {
-        mapDataList = fileManager.WWWLoadData<List<MapData>>(mapDataPath);
-       charDataList = fileManager.WWWLoadData<List<CharData>>(charDataPath);
+        //   mapDataList = fileManager.WWWLoadData<List<MapData>>(mapDataPath);
+        //    charDataList = fileManager.WWWLoadData<List<CharData>>(charDataPath);
 
-   //     mapDataList = fileManager.LoadData<List<MapData>>(mapDataPath);
-    //    charDataList = fileManager.LoadData<List<CharData>>(charDataPath);
+        mapDataList = fileManager.LoadData<Dictionary<int, MapData>>(mapDataPath);
+        charDataList = fileManager.LoadData<Dictionary<int, CharData>>(charDataPath);
 
         prefabBtn = Resources.Load<GameObject>("Prefabs/UI/ShopBtn");
         prefabUIImg = Resources.Load<GameObject>("Prefabs/UI/UIImg");
@@ -81,13 +87,12 @@ public class GameData : MonoBehaviour {
 
         playerData = new PlayerData();
 
-        ItemData t;
+
+
         if (!System.IO.File.Exists(playerDataFilePath))
         {
-            t = new ItemData(charDataList[0].key, 0, charDataList[0].pay, ItemType.CHARACTER);
-            playerData.charList.Add(t);
-            t = new ItemData(mapDataList[0].key, 0, mapDataList[0].pay, ItemType.MAP);
-            playerData.mapList.Add(t);
+            playerData.charList.Add(1000);
+            playerData.mapList.Add(2000);
             playerData.coin = 0;
             fileManager.SaveData<PlayerData>(playerData, playerDataFilePath);
         }
@@ -95,34 +100,50 @@ public class GameData : MonoBehaviour {
         {
             playerData = fileManager.LoadData<PlayerData>(playerDataFilePath);
         }
-  
-        
-        for(int i = 1; i < mapDataList.Count; ++i)
-        {           
-            t = new ItemData(mapDataList[i].key, i, mapDataList[i].pay, ItemType.MAP);
-            for(int j = 0; j < playerData.mapList.Count; ++j)
-            {
-                if(playerData.mapList[j].key == t.key)
-                {
-                    t.having = true;
-                    break;
-                }
-            }
-            itemList.Add(t);            
-        }
-        for(int i = 1; i < charDataList.Count; ++i)
+        int t = 0;
+        foreach(KeyValuePair<int, CharData> tmp in charDataList)
         {
-            t = new ItemData(charDataList[i].key, i, charDataList[i].pay, ItemType.CHARACTER);
-            for(int j = 0; j < playerData.charList.Count; ++j)
-            {
-                if(playerData.charList[j].key == t.key)
-                {
-                    t.having = true;
-                    break;
-                }
-            }
-            itemList.Add(t);
+            tmp.Value.path = t;
+            tmp.Value.having = false;
+            t++;
         }
+        t = 0;
+        foreach (KeyValuePair<int, MapData> tmp in mapDataList)
+        {
+            tmp.Value.path = t;
+            tmp.Value.having = false;
+            t++;
+        }
+
+        for (int i = 0; i < playerData.charList.Count; ++i)
+        {
+            if(charDataList.ContainsKey(playerData.charList[i]))
+            {
+                charDataList[playerData.charList[i]].having = true;
+            }
+        }
+
+        for (int i = 0; i < playerData.mapList.Count; ++i)
+        {
+            if(mapDataList.ContainsKey(playerData.mapList[i]))
+            {
+                mapDataList[playerData.mapList[i]].having = true;
+            }
+        }
+
+        scoreData = new ScoreScript();
+
+        scoreFilePath = Application.persistentDataPath + "/score.bin";
+        if (!System.IO.File.Exists(scoreFilePath))
+        {
+            for(int i = 0; i < 5; ++i)
+            {
+                scoreData.AddScore(i);
+            }
+            fileManager.SaveData<List<int>>(scoreData.scores, scoreFilePath);
+        }
+        else scoreData.scores = fileManager.LoadData<List<int>>(scoreFilePath);
+
 
     }
 
